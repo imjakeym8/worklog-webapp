@@ -86,7 +86,7 @@ export function JournalFeed({
           <article id={entry.date} key={entry.id} className="worklog-card">
             <div className="date-column">
               <time dateTime={entry.date}>{formatWorklogShortDate(entry.date)}</time>
-              <span className="hours">Hours worked: {entry.hours}</span>
+              <span className="hours">Hours worked:<br />{entry.hours}</span>
             </div>
             <div className="entry-content">
               <div className="entry-topline">
