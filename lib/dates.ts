@@ -44,13 +44,3 @@ export function formatWorklogShortDate(value: string): string {
     month: "short",
   }).format(date).toUpperCase();
 }
-
-export function formatWorklogMonth(value: string): string {
-  const date = parseWorklogDate(value);
-  if (!date) return "Unknown date";
-
-  return new Intl.DateTimeFormat("en", {
-    month: "long",
-    year: "numeric",
-  }).format(date);
-}

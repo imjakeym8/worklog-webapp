@@ -15,6 +15,7 @@ import type { WorklogEntry } from "@/types";
 export function PublicWorklogApp() {
   const [entries, setEntries] = useState<WorklogEntry[]>([]);
   const [profile, setProfile] = useState<PublicProfile | null>(null);
+  const [avatarFailed, setAvatarFailed] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [year, setYear] = useState(String(new Date().getFullYear()));
@@ -54,7 +55,25 @@ export function PublicWorklogApp() {
       <div className="app-frame">
         <header className="app-header">
           <div><Link className="wordmark" href="/">worklog<span>.</span></Link><p>Building, learning, debugging, shipping.</p></div>
-          {profile && <a className="public-profile" href={profile.githubProfileUrl} target="_blank" rel="noreferrer">{profile.githubAvatarUrl && <Image src={profile.githubAvatarUrl} alt="" width={32} height={32} />}<span>Connected GitHub<br /><b>@{profile.githubLogin}</b></span></a>}
+          {profile && (
+            <a className="public-profile" href={profile.githubProfileUrl} target="_blank" rel="noreferrer">
+              {profile.githubAvatarUrl && !avatarFailed ? (
+                <Image
+                  src={profile.githubAvatarUrl}
+                  alt=""
+                  width={32}
+                  height={32}
+                  unoptimized
+                  onError={() => setAvatarFailed(true)}
+                />
+              ) : (
+                <span className="public-avatar-fallback" aria-hidden="true">
+                  {profile.githubLogin.charAt(0).toUpperCase()}
+                </span>
+              )}
+              <span>Connected GitHub<br /><b>@{profile.githubLogin}</b></span>
+            </a>
+          )}
         </header>
         <section className="controls public-controls" aria-label="Public Worklog filters">
           <label className="select-wrap"><span className="sr-only">Year</span><select value={year} onChange={(event) => setYear(event.target.value)}>{years.length === 0 && <option>{year}</option>}{years.map((option) => <option key={option}>{option}</option>)}</select></label>

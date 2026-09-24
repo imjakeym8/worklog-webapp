@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { formatWorklogMonth, formatWorklogShortDate } from "@/lib/dates";
+import { formatWorklogShortDate } from "@/lib/dates";
 import type { WorklogEntry } from "@/types";
 
 interface JournalFeedProps {
@@ -66,16 +66,6 @@ export function JournalFeed({
   emptyMessage,
 }: JournalFeedProps) {
   const [openNotes, setOpenNotes] = useState<string | null>(null);
-  const groupedEntries = entries.reduce<Record<string, WorklogEntry[]>>(
-    (groups, entry) => {
-      const month = formatWorklogMonth(entry.date);
-      groups[month] ??= [];
-      groups[month].push(entry);
-      return groups;
-    },
-    {},
-  );
-
   if (!entries.length) {
     return (
       <div className="empty-state">
@@ -88,104 +78,104 @@ export function JournalFeed({
 
   return (
     <section aria-label="Worklog timeline" className="timeline">
-      {Object.entries(groupedEntries).map(([month, monthEntries]) => (
-        <div key={month} className="month-group">
-          <h2>{month}</h2>
-          {monthEntries.map((entry) => {
-            const notesOpen = openNotes === entry.id;
-            const isDeleting = deletingWorklogId === entry.id;
+      {entries.map((entry) => {
+        const notesOpen = openNotes === entry.id;
+        const isDeleting = deletingWorklogId === entry.id;
 
-            return (
-              <article id={entry.date} key={entry.id} className="worklog-card">
-                <div className="date-column">
-                  <time dateTime={entry.date}>{formatWorklogShortDate(entry.date)}</time>
-                  <span className="hours">{entry.hours}h</span>
+        return (
+          <article id={entry.date} key={entry.id} className="worklog-card">
+            <div className="date-column">
+              <time dateTime={entry.date}>{formatWorklogShortDate(entry.date)}</time>
+              <span className="hours">Hours worked: {entry.hours}</span>
+            </div>
+            <div className="entry-content">
+              <div className="entry-topline">
+                <div className="track-list">
+                  {entry.tracks.map((track) => (
+                    <span key={track}>{track}</span>
+                  ))}
                 </div>
-                <div className="entry-content">
-                  <div className="entry-topline">
-                    <div className="track-list">
-                      {entry.tracks.map((track) => (
-                        <span key={track}>{track}</span>
-                      ))}
-                    </div>
-                    <span className={entry.shipped ? "status shipped" : "status in-progress"}>
-                      <i /> {entry.shipped ? "Shipped" : "In progress"}
-                    </span>
-                    {!readOnly && <span className={`visibility-badge ${entry.visibility}`}>{entry.visibility}</span>}
-                  </div>
-                  <p className="activity">{entry.activityBreakdown}</p>
-                  {entry.blockers.length > 0 && (
-                    <p className="metadata blockers">
-                      <b>⚠</b> {entry.blockers.join(" · ")}
-                    </p>
-                  )}
-                  {entry.next.length > 0 && (
-                    <p className="metadata next">
-                      <b>→</b> {entry.next.join(" · ")}
-                    </p>
-                  )}
-                  {entry.quickSummary && (
-                    <p className="summary">
-                      <b>✦</b> {entry.quickSummary}
-                    </p>
-                  )}
-                  {entry.attachment && onPreviewAttachment && (
+                <div className="entry-badges">
+                  <span className={entry.shipped ? "status shipped" : "status in-progress"}>
+                    <i /> {entry.shipped ? "Shipped" : "In progress"}
+                  </span>
+                  {!readOnly && <span className={`visibility-badge ${entry.visibility}`}>{entry.visibility}</span>}
+                </div>
+              </div>
+              <p className="activity">{entry.activityBreakdown}</p>
+              {entry.blockers.length > 0 && (
+                <p className="metadata blockers">
+                  <b>⚠</b> {entry.blockers.join(" · ")}
+                </p>
+              )}
+              {entry.next.length > 0 && (
+                <p className="metadata next">
+                  <b>→</b> {entry.next.join(" · ")}
+                </p>
+              )}
+              {entry.quickSummary && (
+                <p className="summary">
+                  <b>✦</b> {entry.quickSummary}
+                </p>
+              )}
+              {entry.attachment && onPreviewAttachment && (
+                <button
+                  type="button"
+                  className="attachment-link"
+                  title={entry.attachment.originalFilename}
+                  aria-label={`Preview image attachment ${entry.attachment.originalFilename}`}
+                  onClick={(event) => onPreviewAttachment(entry, event.currentTarget)}
+                >
+                  <PaperclipIcon />
+                  <span>{entry.attachment.originalFilename}</span>
+                </button>
+              )}
+              <div className="entry-actions">
+                <div>
+                  {entry.detailedNotes && (
                     <button
-                      type="button"
-                      className="attachment-link"
-                      title={entry.attachment.originalFilename}
-                      aria-label={`Preview image attachment ${entry.attachment.originalFilename}`}
-                      onClick={(event) => onPreviewAttachment(entry, event.currentTarget)}
+                      className="disclosure"
+                      onClick={() => setOpenNotes(notesOpen ? null : entry.id)}
+                      aria-expanded={notesOpen}
                     >
-                      <PaperclipIcon />
-                      <span>{entry.attachment.originalFilename}</span>
+                      Detailed notes
+                      <svg className="disclosure-chevron" aria-hidden="true" viewBox="0 0 24 24" fill="none">
+                        <path d="m9 5 7 7-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
                     </button>
                   )}
-                  <div className="entry-actions">
-                    <div>
-                      {entry.detailedNotes && (
-                        <button
-                          className="disclosure"
-                          onClick={() => setOpenNotes(notesOpen ? null : entry.id)}
-                          aria-expanded={notesOpen}
-                        >
-                          <span>{notesOpen ? "⌄" : "›"}</span> Detailed notes
-                        </button>
-                      )}
-                    </div>
-                    {!readOnly && onEdit && onExportMarkdown && onPublishMarkdown && onDelete && (
-                    <div className="record-actions">
-                      <button type="button" onClick={() => onEdit(entry)} disabled={isDeleting}>
-                        Edit
-                      </button>
-                      <button type="button" onClick={() => onExportMarkdown(entry)}>
-                        Export .md
-                      </button>
-                      <button type="button" onClick={() => onPublishMarkdown(entry)}>
-                        Publish
-                      </button>
-                      <button
-                        type="button"
-                        className="delete-action"
-                        onClick={() => onDelete(entry)}
-                        disabled={isDeleting}
-                      >
-                        {isDeleting ? "Deleting…" : "Delete"}
-                      </button>
-                    </div>
-                    )}
-                  </div>
-                  {notesOpen && (
-                    <div className="expandable">
-                      <MarkdownNotes notes={entry.detailedNotes} />
-                    </div>
-                  )}
                 </div>
-              </article>
-            );
-          })}
-        </div>
-      ))}
+                {!readOnly && onEdit && onExportMarkdown && onPublishMarkdown && onDelete && (
+                  <div className="record-actions">
+                    <button type="button" onClick={() => onEdit(entry)} disabled={isDeleting}>
+                      Edit
+                    </button>
+                    <button type="button" onClick={() => onExportMarkdown(entry)}>
+                      Export .md
+                    </button>
+                    <button type="button" onClick={() => onPublishMarkdown(entry)}>
+                      Publish
+                    </button>
+                    <button
+                      type="button"
+                      className="delete-action"
+                      onClick={() => onDelete(entry)}
+                      disabled={isDeleting}
+                    >
+                      {isDeleting ? "Deleting…" : "Delete"}
+                    </button>
+                  </div>
+                )}
+              </div>
+              {notesOpen && (
+                <div className="expandable">
+                  <MarkdownNotes notes={entry.detailedNotes} />
+                </div>
+              )}
+            </div>
+          </article>
+        );
+      })}
     </section>
   );
 }
