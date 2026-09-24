@@ -31,7 +31,7 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
 }
 
 export const GITHUB_LOGIN_URL = `${API_URL}/api/auth/github`;
-export const GITHUB_ADMIN_LOGIN_URL = `${GITHUB_LOGIN_URL}?next=%2Fworklog%2Fadmin`;
+export const GITHUB_ADMIN_LOGIN_URL = `${GITHUB_LOGIN_URL}?next=%2Fadmin`;
 
 export async function logout(): Promise<void> {
   await apiFetch<void>("/api/auth/logout", { method: "POST" });

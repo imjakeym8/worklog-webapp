@@ -63,6 +63,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(markdown_router)
     app.include_router(github_router)
 
+    @app.get("/api/health", tags=["health"])
     @app.get("/health", tags=["health"])
     async def health() -> dict[str, str]:
         return {"status": "ok"}

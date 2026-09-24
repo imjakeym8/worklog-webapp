@@ -1,5 +1,5 @@
-import { WorklogApp } from "@/components/journal/WorklogApp";
+import { redirect } from "next/navigation";
 
 export default function WorklogAdminPage() {
-  return <WorklogApp />;
+  redirect("/admin");
 }

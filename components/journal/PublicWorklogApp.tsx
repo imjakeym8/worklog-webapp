@@ -53,7 +53,7 @@ export function PublicWorklogApp() {
     <main className="app-shell">
       <div className="app-frame">
         <header className="app-header">
-          <div><Link className="wordmark" href="/worklog">worklog<span>.</span></Link><p>Building, learning, debugging, shipping.</p></div>
+          <div><Link className="wordmark" href="/">worklog<span>.</span></Link><p>Building, learning, debugging, shipping.</p></div>
           {profile && <a className="public-profile" href={profile.githubProfileUrl} target="_blank" rel="noreferrer">{profile.githubAvatarUrl && <Image src={profile.githubAvatarUrl} alt="" width={32} height={32} />}<span>Connected GitHub<br /><b>@{profile.githubLogin}</b></span></a>}
         </header>
         <section className="controls public-controls" aria-label="Public Worklog filters">

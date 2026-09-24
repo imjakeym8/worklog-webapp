@@ -1,13 +1,5 @@
-/**
- * Base URL of the FastAPI backend. Set NEXT_PUBLIC_API_URL in .env.local.
- */
-const configuredAPIURL = process.env.NEXT_PUBLIC_API_URL;
-
-if (!configuredAPIURL) {
-  throw new Error("NEXT_PUBLIC_API_URL is required. Add it to .env.local.");
-}
-
-export const API_URL = configuredAPIURL.replace(/\/$/, "");
+/** Local development can use a separate API origin; production defaults to same-origin. */
+export const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? "").replace(/\/$/, "");
 
 interface APIErrorBody {
   error?: {

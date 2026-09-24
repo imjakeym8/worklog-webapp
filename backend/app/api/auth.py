@@ -31,8 +31,8 @@ Session = Annotated[AsyncSession, Depends(get_session)]
 async def start_github_login(request: Request, oauth: OAuthClient) -> Response:
     # Clearing an existing session prevents a login from inheriting an old authenticated identity.
     request.session.clear()
-    if request.query_params.get("next") == "/worklog/admin":
-        request.session["redirect_after_login"] = "/worklog/admin"
+    if request.query_params.get("next") in {"/admin", "/worklog/admin"}:
+        request.session["redirect_after_login"] = "/admin"
     return await oauth.authorize_redirect(request)
 
 
@@ -55,7 +55,7 @@ async def github_callback(
     # Replace all temporary OAuth state with the minimal local application session.
     request.session.clear()
     request.session["user_id"] = str(user.id)
-    destination = redirect_after_login or "/worklog/admin"
+    destination = redirect_after_login or "/admin"
     return RedirectResponse(f"{frontend_url}{destination}", status_code=303)
 
 

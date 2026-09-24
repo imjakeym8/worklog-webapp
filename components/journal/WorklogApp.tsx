@@ -648,7 +648,7 @@ export function WorklogApp() {
     return (
       <main className="auth-shell">
         <section className="auth-card" role="status">
-          <Link className="wordmark" href="/worklog">
+          <Link className="wordmark" href="/">
             worklog<span>.</span>
           </Link>
           <p>Checking your session…</p>
@@ -661,7 +661,7 @@ export function WorklogApp() {
     return (
       <main className="auth-shell">
         <section className="auth-card">
-          <Link className="wordmark" href="/worklog">
+          <Link className="wordmark" href="/">
             worklog<span>.</span>
           </Link>
           <h1>A compact developer journal.</h1>
@@ -683,7 +683,7 @@ export function WorklogApp() {
     return (
       <main className="auth-shell">
         <section className="auth-card">
-          <Link className="wordmark" href="/worklog">worklog<span>.</span></Link>
+              <Link className="wordmark" href="/">worklog<span>.</span></Link>
           <h1>Access denied</h1>
           <p>This GitHub account is not authorized to manage this Worklog.</p>
           <button className="github-sign-in" type="button" onClick={() => void signOut()}>Sign out</button>
@@ -697,7 +697,7 @@ export function WorklogApp() {
       <div className="app-frame">
         <header className="app-header">
           <div>
-            <Link className="wordmark" href="/worklog">
+            <Link className="wordmark" href="/">
               worklog<span>.</span>
             </Link>
             <p>Building, learning, debugging, shipping.</p>

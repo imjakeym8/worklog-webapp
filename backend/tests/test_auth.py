@@ -28,6 +28,7 @@ async def test_login_creates_current_user_and_returning_login_updates_profile(
     test_context: TestContext,
 ) -> None:
     login_response = await test_context.login()
+    assert login_response.headers["location"] == "http://localhost:3000/admin"
     session_cookie = login_response.headers["set-cookie"].lower()
     assert "httponly" in session_cookie
     assert "samesite=lax" in session_cookie

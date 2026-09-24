@@ -1,5 +1,5 @@
-import { PublicWorklogApp } from "@/components/journal/PublicWorklogApp";
+import { redirect } from "next/navigation";
 
 export default function PublicWorklogPage() {
-  return <PublicWorklogApp />;
+  redirect("/");
 }

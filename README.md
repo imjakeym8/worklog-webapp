@@ -14,17 +14,39 @@ Worklog is a Next.js developer journal backed by a FastAPI REST API and PostgreS
 | `.env.local.example`, `backend/.env.example` | Placeholder-only environment templates; copy locally, never add real values here. |
 | `.gitignore` | Keeps secrets, dependencies, generated output, and local databases out of Git. |
 
-## GitHub and deployment readiness
+## Production deployment
 
-This repository contains both applications, but the root Next.js project and `backend/` are separate deployable services. For local development, follow [Local setup](#local-setup). Do not commit `.env.local` or `backend/.env`; copy the example files and supply your own values locally.
+The portfolio remains at `https://imjakey.dev`. This repository is intended to serve the public journal at `https://worklog.imjakey.dev/`, the protected editor at `/admin`, and FastAPI on the **same origin** at `/api/*`. The previous `/worklog` and `/worklog/admin` paths redirect to `/` and `/admin`. Local development still uses separate Next.js and FastAPI processes as described below.
 
-To deploy the frontend on Vercel, import this GitHub repository with the project Root Directory set to the repository root. Vercel needs `package.json`, one chosen package-manager lockfile, `app/`, `components/`, `lib/`, `types/`, `public/`, and the Next.js/TypeScript/PostCSS configuration. This checkout currently has **both** `package-lock.json` and `pnpm-lock.yaml`; choose one package manager and remove the other lockfile before the first production deployment so dependency installation is unambiguous. Do not commit `.next/`, `node_modules/`, or `.vercel/`: Vercel builds from source and keeps local project metadata out of Git.
+Import this repository as **one Vercel project**, with Root Directory at the repository root and Framework Preset set to **Services**. The root `vercel.json` defines a Next.js frontend service and a FastAPI service from `backend/`; `/api/*` goes to FastAPI and other paths go to Next.js. `backend/main.py` exposes the FastAPI `app` without replacing the existing factory. Vercel Services must be available on the selected account; validate this configuration with a preview deployment before attaching the custom domain. `pnpm-lock.yaml` is the only lockfile and `pnpm` is the intended frontend package manager. Build output, dependencies, `.vercel/`, and real environment files remain ignored.
 
-Set `NEXT_PUBLIC_API_URL` in the frontend Vercel project's environment settings to the public HTTPS API origin (for example, `https://api.example.com`), then redeploy. This value is exposed to browser code; never put a secret in a `NEXT_PUBLIC_*` variable. Production backend settings belong only in the backend host's environment settings: `DATABASE_URL`, `FRONTEND_URL`, `BACKEND_URL`, `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `GITHUB_CALLBACK_URL`, `SESSION_SECRET`, `ADMIN_GITHUB_LOGINS`, and storage/GitHub App settings when those features are enabled. Use the variable names in `backend/.env.example`; do not put production values in Git.
+Production frontend requests default to same-origin `/api/*`; do **not** set `NEXT_PUBLIC_API_URL` on Vercel unless intentionally overriding that behavior. Keep `NEXT_PUBLIC_API_URL=http://localhost:8000` in local `.env.local` for two-process development. Do not put secrets in any `NEXT_PUBLIC_*` variable.
 
-The FastAPI backend is **not automatically deployable from this checkout on Vercel**: it currently exposes the `create_app` factory in `backend/app/main.py`, rather than a Vercel-discoverable `app` instance. Deploy it on a suitable Python host, or complete and test a separate Vercel backend entrypoint before selecting `backend/` as another Vercel project. It also needs a reachable production PostgreSQL database and private object-storage configuration for attachments. Run `python -m alembic upgrade head` against the production database as a controlled deployment step; the application does not create tables at startup.
+Set these backend variables in the Vercel project's environment settings, **not** in Git (use the exact names from `backend/.env.example`):
 
-Before enabling GitHub sign-in, update the production OAuth App callback to the exact HTTPS backend callback (`https://api.example.com/api/auth/github/callback`) and set matching `BACKEND_URL`, `GITHUB_CALLBACK_URL`, and `FRONTEND_URL`. The frontend and API must also be deployed under a compatible same-site HTTPS domain arrangement for the current `SameSite=Lax` session cookie and credentialed browser requests. Distinct `*.vercel.app` and unrelated backend domains are not a drop-in authentication configuration. Verify sign-in, admin access, public/private visibility, Markdown, publishing, and attachments on the deployed URLs before treating production as ready.
+| Variable | Production setting |
+| --- | --- |
+| `DATABASE_URL` | Hosted PostgreSQL URL using `postgresql+asyncpg://` and the provider's required TLS options; never localhost. |
+| `FRONTEND_URL`, `BACKEND_URL` | Both `https://worklog.imjakey.dev`. |
+| `ENVIRONMENT` | `production`. |
+| `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` | Production GitHub OAuth App credentials. |
+| `GITHUB_CALLBACK_URL` | `https://worklog.imjakey.dev/api/auth/github/callback`. |
+| `SESSION_SECRET`, `SESSION_MAX_AGE_SECONDS` | Independent signing secret (at least 32 characters); optional session lifetime. |
+| `ADMIN_GITHUB_LOGINS` | `imjakeym8,markschwart34`. |
+| `STORAGE_BUCKET`, `STORAGE_ENDPOINT`, `STORAGE_REGION`, `STORAGE_ACCESS_KEY`, `STORAGE_SECRET_KEY` | Private Supabase S3-compatible bucket configuration for attachments. |
+| `GITHUB_APP_ID`, `GITHUB_APP_PRIVATE_KEY`, `GITHUB_APP_SLUG` | GitHub App server-side settings for repository connection and publishing. |
+
+Configure the production GitHub **OAuth App** Homepage URL as `https://worklog.imjakey.dev` and Authorization callback URL as `https://worklog.imjakey.dev/api/auth/github/callback`. The repository/publishing GitHub **App** uses installation credentials through the GitHub API; this code does not implement a GitHub App callback, setup endpoint, or webhook receiver, so do not invent URLs for those fields. Its public homepage may point to `https://worklog.imjakey.dev`.
+
+Create a hosted PostgreSQL database and a private storage bucket separately. After setting the production backend variables, run migrations from `backend/` in a controlled environment with network access to that database:
+
+```powershell
+cd backend
+python -m alembic upgrade head
+python -m alembic current
+```
+
+Do not run migrations against the local database by mistake; no tables are created on app startup. Before promoting the deployment, check `/api/health`, `/`, `/admin`, OAuth return to `/admin`, admin allowlisting, public/private visibility, Markdown import/export, publishing, and private/public attachment delivery. Browser cookies remain `HttpOnly`, `SameSite=Lax`, and `Secure` in production; `FRONTEND_URL` also restricts mutation origins and credentialed CORS to the Worklog origin.
 
 ## Architecture and database
 
@@ -322,8 +344,8 @@ The same FastAPI application and PostgreSQL database serve two frontend routes:
 
 | Route | Audience | Access |
 | --- | --- | --- |
-| `/worklog` | Visitors | Anonymous, read-only public entries only |
-| `/worklog/admin` | Journal owners | GitHub session plus allowlisted administrator |
+| `/` | Visitors | Anonymous, read-only public entries only |
+| `/admin` | Journal owners | GitHub session plus allowlisted administrator |
 
 GitHub OAuth confirms identity; it does not grant administrative access. Set the backend-only
 comma-separated `ADMIN_GITHUB_LOGINS` value to permitted GitHub logins. The local example uses
@@ -352,10 +374,10 @@ then retain existing owner-scoped resource checks and mutation-Origin validation
 ### Local access checks
 
 1. Run `python -m alembic upgrade head` in `backend/`.
-2. Visit `/worklog` signed out: only public entries and no authoring controls should appear.
-3. Visit `/worklog/admin` signed out, then authenticate with GitHub.
+2. Visit `/` signed out: only public entries and no authoring controls should appear.
+3. Visit `/admin` signed out, then authenticate with GitHub.
 4. Verify `imjakeym8` and `markschwart34` (or configured local equivalents) can manage their
    owner-scoped journal entries.
 5. Verify an unrelated GitHub account sees access denied and receives `403` from protected APIs.
-6. Create one private and one public entry; `/worklog` must show only the public entry and only its
+6. Create one private and one public entry; `/` must show only the public entry and only its
    attachment.
